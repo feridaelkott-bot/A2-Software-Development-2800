@@ -159,11 +159,8 @@ function loadTexture(path) { //this is a function that will return a promise: ei
 function createEnemies(ctx, canvas, enemyImg) {
   // TODO draw enemies
 
-  //1. we have to use the loadTexture funciton to access the image path, and load it up: 
-  const enemy_image = loadTexture(enemyImg); 
-
-  //2. draw the image onto the canvas context that is passed here: 
-  ctx.drawImage(enemy_image, canvas.width/2, canvas.height/2); 
+  //1. draw the image onto the canvas context that is passed here: 
+  ctx.drawImage(enemyImg, canvas.width/2, canvas.height/2); 
 }
 
 
@@ -184,12 +181,14 @@ window.onload = async () => { //this is an async function which means that we wi
   //make the ctx of the canvas for 2D operations, so this opens up a wide variety of methods for us to use
   ctx = canvas.getContext('2d') 
   // TODO load textures
-  const hero_image = await loadTexture(/assets/player.png)
-  const enemy_image = await loadTexture(/assets/enemyShip.png); 
+
+  //NOTE that all file paths must be strings, otherwise they will be treated as regualr expressions
+  const hero_image = await loadTexture("/assets/player.png") 
+  const enemy_image = await loadTexture("/assets/enemyShip.png"); 
 
   // TODO draw black background
   ctx.fillStyle = 'black'; //this tells the canvas to fill everything we add with the colour black
-  ctx.fillRect(0,0)
+  ctx.fillRect(0,0, 200, 200)
   // TODO draw hero
   ctx.drawImage(hero_image, canvas.width/2 - 45, canvas.height - canvas.height/4)
   

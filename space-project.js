@@ -226,3 +226,261 @@ window.onload = async () => { //this is an async function which means that we wi
 //we will accomplish this using a for loop (look at the function above)
 
 
+
+
+
+
+
+
+
+//NOW, we need to add motion for all teh players/enemies
+
+//HERE ARE THE STEPS: 
+//you need to use a key press(es) to update the x,y position fo your sprite
+//then you need to erase the old frame, because updating the positon is not enought to get rid of its old position
+//draw the new frame with the new coordinates: 
+//--> All of this erasing and moving is done in a very short amount of time, so it's not a long pause that the player has to see of the screen being cleared, and then the robot moving
+
+//BELOW IS A BASIC EXAMPLE ON WHAT THE CHANGE IN MOVEMENT IS SUPPOSED TO LOOK LIKE: 
+// hero.x += 5; 
+// ctx.clearRect(0,0,canvas.width, canvas.height); 
+// ctx.fillRect(0,0,canvas.width, canvas.height); 
+// ctx.fillStyle = 'black'
+// ctx.drawImage(heroImg, hero.x, hero.y); 
+
+
+
+
+
+//to allow thte user to be the one to change the position of the game object, we need to give them the option of using key presses: 
+//much like in Java, we have event listeners in js, 
+
+//example: 
+// window.addEventListener('keyup', (evt) => {
+
+//   if (evt.key == 'ArrowUp'){
+//     //do something
+//   }
+// })
+
+
+//the 'evt' above is basically a context object for the movement: it checks for specific key events that are represented by built in library constants
+
+//also worth noting, that we add this event listener to the WINDOW, so the event listener is working on all elements of the window itself. 
+
+//practically speaking,we have a key, and a keyCode, 
+//the 'key' is the constant for the specific ksy that you are coding for
+//the key code si teh built in number of that key. for example, the down key is represented by the number 37
+
+
+//IMPORTANT NOTE: Sometimes, certain keypresses have their own implementations within the browser, and in order fo royur game to be successful, you
+//need to override the ones you need to have a specific implementation for: 
+
+//in teh code below, basically we set a listener for which key is down, and each case corresponds to a different key press
+//therein we can provide a specific implementation for each one
+//example: 
+// const onKeyDown = function (e) {
+//   console.log(e.keyCode); 
+//   switch (e.keyCode){
+//     case 37:
+//     case 39:
+//     case 38:
+//     case 40:
+//     case 32:
+//       e.preventDefault(); 
+//       break; 
+//     default: 
+//       break; 
+//   }
+// }
+
+// //add an eventlistener to teh window, and this event listener has been defined by the cases above
+// //so now, each time a key is pressed, this code implementation is referred to by the compiler
+// window.addEventListener('keydown', onKeyDown); 
+
+
+
+
+
+
+// //the above ey pressing events is only applicable to the player who wants to avoid the spaceships
+
+// //for the enemies, we want to give them automatic movement: 
+
+// //example: 
+// const id = setInterval(() => {
+//   //move the enemy on teh y-axis: 
+//   enemy.y += 10; 
+// }, 100)
+// //so basically, the enemy's movement must be controlled automatically, (maybe I'm thinking with a while loop throuhgtout the whoel duration of the game)
+
+
+// //NEVERMIND to the comment above, I just read that the , 100 in teh code example above is a time that runs every 100 milliseconds
+// //so the enemy's movement is on a timer basis. 
+// //--> IN hindsight this is much cleaner than having a while loop: it's cleaner and easier to read
+
+// //HOWEVER I was correct about A LOOP, the entire game must be kept in a loop in order for the frame to keep being redrawn and updated
+
+// //here's an example: 
+// const gameLoopID = setInterval(() => {
+//   function gameLoop() {
+//     ctx.clearRect(0,0,canvas.width, canvas.height); //clear the entire canvas to remove the previous frame
+//     ctx.fillStyle = "black"; //reset the screen background to black
+//     ctx.fillRect(0,0, canvas.width, canvas.height); //fille the recatngle where the objects are placed
+//     drawHero(); //redraw the elements: 
+//     drawEnemies(); 
+//     drawStaticObjects(); 
+//   }
+//   gameLoop(); //reloop
+// }, 200) //interval timing takes place every 200 milliseconds --> so basically, the game becomes so smooth, that the user does not notice any clearing of the screen 
+
+
+
+
+
+
+
+//NOW THAT THE LESSON IS OVE FOR PART3: WE WILL IMPLEMENT THIS TO OUR ACTUAL GAME: 
+
+//1. hero controls
+//enemy (automatic) movement
+
+
+//--> to start program it's always "npm start"
+
+
+//step 1 --> we need to create game objects for the enemies and the player
+//these game objects will be used for us ot program the movement of the sprites on teh screen
+
+//each object will contain x and y fields to allow for the movement of the object around the screen 
+
+class GameObject {
+
+  //each game object that is created will have a contructor that constructs several fields
+  //these fields will be customized based on teh object that encompasses them 
+  //for examples, the type field will be labelled as enemy or player
+  //if the enemy or the player is dead will be different boolean value for each spearate game object
+  //the image will obviously be the same for the enemies, but only one object iwll have the player image
+  constructor(x, y){
+    this.x = x; 
+    this.y = y; 
+    this.dead = false; 
+    this.type = ""; 
+    this.width = 0; 
+    this.height = 0; 
+    this.img = undefined; 
+  }
+
+
+  //now, define a draw method that will draw this specific obejct to the screen: 
+  draw(ctx){
+    ctx.drawImage(this.img, this.x, this.y, this.width, this.height); 
+  }
+}
+
+
+
+
+
+//NOw, we will use the notion of inheritance which is very useful for not having to repeat code: 
+//create a hero class and a enemy class that both extend the gameObject class and initialize thier own specific fields
+
+class Hero extends GameObject {
+  constructor(x, y){
+    super(x, y); //call the parent class first, and construc tthe game object. Only then can we override/change some of the fields
+    
+    //set the values of the player object 
+    //--> I need to note something important here: each game object will appear (from what I remmebr from other coding projects), will appear as a dot on the screen
+    //it is then our responsibility to "correlate" that dot/object to the specific image
+    //that's why here we have width and height variables
+    //bu thte images will be coordinated with the mathematical movement values here
+    this.width = 98; 
+    this.height = 75; 
+    this.type = "Hero"; 
+    this.speed = 5; 
+  }
+}
+
+class Enemy extends GameObject {
+  constructor (x, y){
+    super(x, y); 
+    this.width = 98; 
+    this.height = 50; 
+    this.type = "Enemy"; 
+
+
+    //this interval setup is crucial to making the enemies move automatically
+    //this makes sure that the enemeies stay within the bounds of the canvas
+    const id = setInterval;(() => {
+      if (this.y < canvas.height - this.height){
+        this.y += 5; 
+      }else {
+        console.log('stopped at', this.y); 
+        clearInterval(id); 
+      }
+    }, 300)
+  }
+}
+
+
+
+//NOW we need to add key-event handlers for the player sprite: 
+//in teh code below, basically we set a listener for which key is down, and each case corresponds to a different key press
+//therein we can provide a specific implementation for each one
+//example: 
+const onKeyDown = function (e) {
+  console.log(e.keyCode); 
+  switch (e.keyCode){
+    case 37:
+    case 39:
+    case 38:
+    case 40:
+    case 32:
+      e.preventDefault(); 
+      break; 
+    default: 
+      break; 
+  }
+}
+
+//add an eventlistener to teh window, and this event listener has been defined by the cases above
+//so now, each time a key is pressed, this code implementation is referred to by the compiler
+window.addEventListener('keydown', onKeyDown); 
+
+
+
+
+//now that we have overriden the default key presses that are programmed to do a specific thing in teh browser, we can addd the funcitonalitites of the up, down , left right key presses to move the actual player object
+
+window.addEventListener("keyup", (evt) => {
+  if (evt.key === "ArrowUp") {
+    eventEmitter.emit(Messages.KEY_EVENT_UP);
+  } else if (evt.key === "ArrowDown") {
+    eventEmitter.emit(Messages.KEY_EVENT_DOWN);
+  } else if (evt.key === "ArrowLeft") {
+    eventEmitter.emit(Messages.KEY_EVENT_LEFT);
+  } else if (evt.key === "ArrowRight") {
+    eventEmitter.emit(Messages.KEY_EVENT_RIGHT);
+  }
+});
+
+//event emitter is basically a class that sends messages throughtou the backend of our program
+//so the key press is sent to tthe backedn to understand that this was a specific kwy press
+//and then later in the code, the backend will send a signal to move the object accordingly. 
+
+//This whole event emitter situation represents the publish/subscribe phenomenon
+
+
+
+class EventEmitter {
+  constructor() {
+    this.listeners = {};
+  }
+
+  on(message, listener) {
+    if (!this.listeners[message]) {
+      this.listeners[message] = [];
+    }
+    this.listeners[message].push(listener);
+  }
+}

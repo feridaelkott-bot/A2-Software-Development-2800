@@ -159,8 +159,28 @@ function loadTexture(path) { //this is a function that will return a promise: ei
 function createEnemies(ctx, canvas, enemyImg) {
   // TODO draw enemies
 
-  //1. draw the image onto the canvas context that is passed here: 
-  ctx.drawImage(enemyImg, canvas.width/2, canvas.height/2); 
+  //--> We want to draw more than ust one enemy, so here ar eth evariables that will allow us to do that: 
+  const ENEMY_TOTAL = 5; 
+  const ENEMY_SPACING = 98;
+  const FORMATION_WIDTH = ENEMY_TOTAL * ENEMY_SPACING;
+  const START_X = (canvas.width - FORMATION_WIDTH) / 2;
+  const STOP_X = START_X + FORMATION_WIDTH;
+
+  //we will set up 5 enemies per row and column , which will creat e a5x5 grid for us: 
+  //--> we will be specifying how much space needs to be in between the enemies, and how big the whole table should be
+
+  //we will use the above constants for the following nested fo rloop: 
+  for (let x = START_X; x < STOP_X; x += ENEMY_SPACING){
+    for (let y = 0; y < 50*5; y += 50){
+      ctx.drawImage(enemyImg, x, y); 
+    }
+  }
+
+  //the outer for loop creates the rows, and the inner for loop creates the columsn
+
+
+
+
 }
 
 
@@ -172,7 +192,7 @@ function createEnemies(ctx, canvas, enemyImg) {
 
 
 
-
+//once the window (browser) has been loaded, the following executions will take place: 
 window.onload = async () => { //this is an async function which means that we will be utilizing the keyword 'await' to wait for the response of teh promise function that will be loading up our images :
   
   
@@ -187,13 +207,22 @@ window.onload = async () => { //this is an async function which means that we wi
   const enemy_image = await loadTexture("/assets/enemyShip.png"); 
 
   // TODO draw black background
-  ctx.fillStyle = 'black'; //this tells the canvas to fill everything we add with the colour black
-  ctx.fillRect(0,0, 200, 200)
+  ctx.fillStyle = 'black'; //this tells the canvas to fill everything we add to canvas (aside from images) with the colour black
+  ctx.fillRect(0,0, 4000, 4000)//make sthe black rectagnle fill a large poriton of the screen
   // TODO draw hero
-  ctx.drawImage(hero_image, canvas.width/2 - 45, canvas.height - canvas.height/4)
+  ctx.drawImage(hero_image, canvas.width/2 - 45, canvas.height - canvas.height/4) //these dimentsions given by teh intructor, allows the image of the hero to be right at the middle of the screen 
   
   // TODO uncomment the next line when you add enemies to screen
-  createEnemies(ctx, canvas, enemyImg);
+  createEnemies(ctx, canvas, enemy_image); //then we pass in the enemy image that we intialized above, using the Promise funciton and await, 
+  //--> our create Enemies function will take our current canvas ctx that allows for 2d operations, and our canvas, and our enemy image, to draw the enemy on teh screen
+
 }
+
+
+
+
+//Now, we need to create 5x5 of the enemies. 
+//this is why we have a separate create enemies function, because we're gonna want ot incldue more than just one image of the enemy
+//we will accomplish this using a for loop (look at the function above)
 
 

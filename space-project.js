@@ -472,6 +472,22 @@ window.addEventListener("keyup", (evt) => {
 
 
 
+//these are variables that will help us set up the event emitter
+const Messages = {
+  KEY_EVENT_UP: "KEY_EVENT_UP",
+  KEY_EVENT_DOWN: "KEY_EVENT_DOWN",
+  KEY_EVENT_LEFT: "KEY_EVENT_LEFT",
+  KEY_EVENT_RIGHT: "KEY_EVENT_RIGHT",
+};
+
+let heroImg, 
+    enemyImg, 
+    laserImg,
+    canvas, ctx, 
+    gameObjects = [], 
+    hero, 
+    eventEmitter = new EventEmitter();
+
 class EventEmitter {
   constructor() {
     this.listeners = {};
@@ -483,4 +499,47 @@ class EventEmitter {
     }
     this.listeners[message].push(listener);
   }
+}
+
+
+
+//initialize the game: 
+function initGame(){
+  gameObjects = []; //create an array for all the game objects, whcih we will use to access them each individually
+  createEnemies(); //call teh create enemies function
+  createHero(); //call the createHeo function
+
+
+  //below, we will use the event emitter to actually move the sprites around the screen
+  //I want to note that due to the way the canvas is set up, moving down might avtaully be moving "up" 
+  
+  eventEmitter.on(Messages.KEY_EVENT_UP, () => {
+    hero.y -= 5;//if user presses up, move the hero 
+  }); 
+  //if the
+  eventEmitter.on(Messages.KEY_EVENT_DOWN, () => {
+    hero.y += 5;
+  });
+
+  eventEmitter.on(Messages.KEY_EVENT_LEFT, () => {
+    hero.x -= 5;
+  });
+
+}
+
+//now we need to reinitializ the window's onload setup so that the game loop starts when it runs
+window.onload = async () => {
+  canvas = document.getElementById("canvas"); 
+  ctx = canvas.getContext("2d"); 
+  heroImg = await loadTexture("assets/player.png")
+  laserImg = await loadTexture("assets/laserRed.png")
+
+
+  //call the init game function which will start the game loop : 
+  initGame(); 
+  const gameLoopId = setInterval(() => {
+    ctx.clearRect(0,0,canvas.width, canvas.height); 
+    ctx.fillStyle = "black"; 
+    
+  })
 }

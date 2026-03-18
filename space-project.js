@@ -115,6 +115,9 @@ class Hero extends GameObject{
     this.type="Hero"; 
     this.speed = 5; //speed is defined only for the player
     this.cooldown = 0; 
+
+
+    //for keeping track fo how many points and teh lives we have left for teh player
     this.life = 3; 
     this.points = 0; 
 
@@ -143,7 +146,16 @@ class Hero extends GameObject{
     return this.cooldown == 0;
   }
 
+  decrementLife() {
+    this.life--;
+    if (this.life === 0) {
+      this.dead = true;
+    }
+  }
 
+  incrementPoints() {
+    this.points += 100;
+  }
   
 }
 
@@ -207,7 +219,8 @@ class Laser extends GameObject {
 function updateGameObjects() {
   const enemies = gameObjects.filter(go => go.type === 'Enemy');
   const lasers = gameObjects.filter(go => go.type === "Laser");
-  
+  const heroRect = hero.rectFromGameObject(); 
+
   // Test laser-enemy collisions
   lasers.forEach((laser) => {
     enemies.forEach((enemy) => {
@@ -224,7 +237,19 @@ function updateGameObjects() {
           second: enemy,
         });
       }
+
+      
+
+
     });
+
+  });
+
+  //this one is for detecting collisoisn with the enemy and hero
+  enemies.forEach(enemy => {
+    if (intersectRect(heroRect, enemy.rectFromGameObject())) {
+      eventEmitter.emit(Messages.COLLISION_ENEMY_HERO, { enemy });
+    }
   });
 
   // Remove destroyed objects
@@ -288,6 +313,12 @@ window.addEventListener("keyup", (evt) => {
     eventEmitter.emit(Messages.KEY_EVENT_SPACE); //this will emit a standardized event emssage, whcih says that when this ky is down (space bar), refer to emit for how this game implementation si supposed to work
 
   }
+
+  //add a key detection for when the user enters the enter key
+  else if(evt.key === "Enter"){
+    eventEmitter.emit(Messages.KEY_EVENT_ENTER); 
+
+  }
 });
 
 //the above code detects keyboard input, and converts it to custom game events
@@ -328,6 +359,10 @@ class EventEmitter {
     
     }
   }
+  //creat ethe clear method to clear the screen
+  clear () {
+    this.listeners = {}; 
+  }
 
 }
 
@@ -344,7 +379,12 @@ const Messages = {
   
   KEY_EVENT_SPACE: "KEY_EVENT_SPACE",
   COLLISION_ENEMY_LASER: "COLLISION_ENEMY_LASER",
-  COLLISION_ENEMY_HERO: "COLLISION_ENEMY_HERO"
+  COLLISION_ENEMY_HERO: "COLLISION_ENEMY_HERO",
+
+  //new message constants to define the end game loss and end game win: 
+  GAME_END_LOSS: "GAME_END_LOSS",
+  GAME_END_WIN: "GAME_END_WIN",
+  KEY_EVENT_ENTER: "KEY_EVENT_ENTER",
 
 };
 
@@ -407,8 +447,51 @@ function initGame(){
     first.dead = true; 
     second.dead = true; 
 
+    hero.incrementPoints(); //increment the hero's points if the enemy got hit witha laser
+
+    //tehn check if the enemies are dead (refer to funciton oimplementation below)
+    if(isEnemiesDead()){
+      //then call the emit funciton with the message of GAME_END_WIN option. Which iwll end the game telling us that player won
+      eventEmitter.emit(Messages.GAME_END_WIN);
+    }
+
   });
 
+
+
+  //now add event emitters fo rwhen we lose lives after a collision:
+  //so thsi collision event listener is for when the enemy collides with the hero
+  eventEmitter.on(Messages.COLLISION_ENEMY_HERO, (_, { enemy }) => {
+    enemy.dead = true;
+    hero.decrementLife();
+
+    if (isHeroDead()){
+      eventEmitter.emit(Messages.GAME_END_LOSS); 
+      return; //loss before victory
+    }
+    if (isEnemiesDead()){
+      eventEmitter.emit(Messages.GAME_END_WIN); 
+    }
+  }); 
+
+  //if game end win is the message received, then ending the game is set to true
+  eventEmitter.on(Messages.GAME_END_WIN, () => {
+    endGame(true); 
+  }); 
+
+  //if player lost the game, then endGame fucntion set to false
+  eventEmitter.on(Messages.GAME_END_LOSS, () => {
+    endGame(false); 
+  }); 
+
+  eventEmitter.on(Messages.KEY_EVENT_ENTER, () => {
+    resetGame(); 
+  }); 
+
+  
+
+//NOTE: above I have added to each of the emitters, the case on what to do if the hero or enemies are dead, depending on teh situation at hand 
+  
 }
 
 
@@ -417,6 +500,115 @@ function drawGameObjects(ctx){
   gameObjects.forEach(go => go.draw(ctx))
 }
 
+
+//this is to draw the life image (the smaller spaceship for teh hero image), which represents the numebr fo lives the hero has left
+function drawLife() {
+  const START_POS = canvas.width - 180;
+  for (let i = 0; i < hero.life; i++) {
+    ctx.drawImage(lifeImg, START_POS + (45 * (i + 1)), canvas.height - 37);
+  }
+}
+
+//then we can add text to show how many lives (numerically) are left
+function drawPoints() {
+  ctx.font = "30px Arial";
+  ctx.fillStyle = "red";
+  ctx.textAlign = "left";
+  ctx.fillText("Points: " + hero.points, 10, canvas.height - 20);
+}
+
+
+
+//finally, we need funcitons that will check whether the hero si dead or the enemies are all dead: 
+function isHeroDead(){
+  return hero.life <= 0; 
+
+}
+
+function isEnemiesDead(){
+
+  //go through the gameObjects array, and check to see which objects taht are enemeies, and have type NOT dead (anything other than dead)
+  const enemies = gameObjects.filter((go) => go.type === "Enemy" && !go.dead); 
+  
+  //return true/false based on whether the enemies var contains any such enemy objects 
+  return enemies.length === 0; 
+
+}
+
+
+
+//create the message display system, to know who won and who lost: 
+function displayMessage(message, color="red"){
+
+  //here, we're placing the text in teh center of the screen, which is specified by the width/height dimaentsions here
+
+  ctx.font = "30px Arial"; 
+  ctx.fillStyle = color; 
+  ctx.textAlign = "center"; 
+
+  ctx.fillText(message, canvas.width/2, canvas.height/2); 
+}
+
+
+
+//now create the end game function: 
+function endGame(win) {
+
+
+  //win is either going to be true/false (recall above when we passed in t/f based on either the hero's loss or the enemies' loss)
+  clearInterval(gameLoopId);
+
+  // Set a delay to ensure any pending renders complete
+  setTimeout(() => {
+
+    //clear the entire canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    //if the phero won
+    if (win) {
+      displayMessage(
+        "Victory!!! Pew Pew... - Press [Enter] to start a new game Captain Pew Pew",
+        "green"
+      );
+      //else if the hero did not win
+    } else {
+      displayMessage(
+        "You died !!! Press [Enter] to start a new game Captain Pew Pew"
+      );
+    }
+  }, 200)  //every 200 ms this will be run
+}
+
+
+
+//create the reset funciton
+function resetGame() {
+
+  //if the gameLoop is still running, 
+  if (gameLoopId) {
+
+    //then clear its interval (i.e stop it)
+    clearInterval(gameLoopId);
+    //employt the clear() method from the event emitter  which clears all listeners
+    eventEmitter.clear();
+
+    //call again the initializer fo the game
+    initGame();
+
+    //reset the game loop, calling the smae exact methods we used before in window.onload (below)
+    gameLoopId = setInterval(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawPoints();
+      drawLife();
+      updateGameObjects();
+      drawGameObjects(ctx);
+    }, 100);//game loops every 100 ms
+  }
+}
 
 
 //refactor the window.onload function to initialize it the game and set up a game loop on a good interval, 

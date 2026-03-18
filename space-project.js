@@ -115,6 +115,9 @@ class Hero extends GameObject{
     this.type="Hero"; 
     this.speed = 5; //speed is defined only for the player
     this.cooldown = 0; 
+    this.life = 3; 
+    this.points = 0; 
+
   }
 
   //the fire() method is for allowing the hero to release lasers.
@@ -139,6 +142,9 @@ class Hero extends GameObject{
   canFire() {
     return this.cooldown == 0;
   }
+
+
+  
 }
 
 
@@ -347,6 +353,7 @@ const Messages = {
 let heroImg, 
     enemyImg, 
     laserImg,
+    lifeImg,
     canvas, ctx, 
     gameObjects = [], //the game objects will be stored here
     hero, 
@@ -415,6 +422,8 @@ function drawGameObjects(ctx){
 //refactor the window.onload function to initialize it the game and set up a game loop on a good interval, 
 //we'll also add a laser beam: 
 window.onload = async () => {//async to wai tfor the loadTexture to work successfully for each of teh objects
+  
+  
   canvas = document.getElementById("canvas");//get the cavnas
   ctx = canvas.getContext("2d");//render it for 2d methods
 
@@ -422,7 +431,7 @@ window.onload = async () => {//async to wai tfor the loadTexture to work success
   heroImg = await loadTexture("assets/player.png");
   enemyImg = await loadTexture("assets/enemyShip.png");
   laserImg = await loadTexture("assets/laserRed.png");
-
+  lifeImg = await loadTexture("assets/life.png"); 
   initGame();
 
   //for set intervals (every 100 ms), keep clearing the screen 
@@ -431,7 +440,15 @@ window.onload = async () => {//async to wai tfor the loadTexture to work success
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     updateGameObjects(ctx); //call this so that the collided enemies and lasers can be removed
+    
+    //draw points and draw life are for printing text to the screen 
+    drawPoints(); 
+    drawLife(); 
     drawGameObjects(ctx);
+
+
+    
+
     
   }, 100);
 };
